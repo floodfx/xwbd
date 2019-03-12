@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Crosswords by Donnie</title>
+    <style>
+      body {
+        font-family: Tahoma, Helvetica, Sans-Serif;
+        background-color: #f6f6f6;
+        font-size: 14px;
+        -webkit-print-color-adjust: exact !important;
+      }
+      h2 {
+        color: #00008b;
+      }
+      a {
+        color: #0c519f;
+        text-decoration: none;
+      }
+      a:hover {
+        color: #cc0000;
+        text-decoration: underline;
+      }
+      .links {
+        margin-bottom: 20px;
+        font-size: 12px;
+      }
+      .links a {
+        margin-left: 4px;
+        margin-right: 4px;
+      }
+      #puzNotepad {
+        background-color: #ffffe0;
+        max-width: 800px;
+        padding: 4px;
+        border: 1px solid #808080;
+        margin-bottom: 8px;
+        display: none;
+      }
+      #puzTable {
+        border-collapse: collapse;
+        border-spacing: 0;
+      }
+      #puzTable td {
+        width: 26px;
+        text-align: center;
+        font-size: 12px;
+        border: 1px solid #000000;
+        background-color: White;
+        padding: 0;
+      }
+      #puzTable .black {
+        background-color: Black;
+      }
+      #puzTable .circle {
+        background-color: yellow;
+      }
+      #puzTable .shade {
+        background-color: lightgray;
+      }
+      .grid {
+        font-size: 8px;
+        text-align: left;
+        padding-left: 1px;
+        height: 9px;
+      }
+      .letter {
+        height: 17px;
+        vertical-align: baseline;
+        font-weight: bold;
+      }
+      .copy {
+        font-size: 11px;
+        color: #303030;
+        font-style: italic;
+        margin-top: 2px;
+      }
+      .clue {
+        float: left;
+        background-color: #ffffff;
+        padding: 8px;
+        border: 1px solid #00008b;
+        margin: 20px 20px 20px 0;
+        max-width: 380px;
+        font-size: 12px;
+        display: none;
+      }
+      .cluehead {
+        font-size: 18px;
+        background-color: #87cefa;
+        font-weight: bold;
+        padding: 4px;
+        margin-bottom: 20px;
+        border: 1px solid #808080;
+        text-align: center;
+        letter-spacing: 2px;
+      }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script>
+      //
+      // using JSONP and jQuery
+      //
+
+      function ShowPuzzle(puzzle) {
+        console.log("puzzle", puzzle);
+        ("use strict");
+
+        // Fill in text fields
+
+        $("#puzTitle").html(puzzle.title);
+        $("#puzAuthor").html("by " + puzzle.author);
+        $("#puzCopy").html("&copy; " + puzzle.copyright);
+
+        // Create the puzzle dynamically and fill in grid numbers and answers
+
+        var pt = $("#puzTable")[0];
+        var n = 0;
+        var i = 0;
+        var row, thisrow, col, cell, grid, val;
+
+        for (row = 0; row < puzzle.size.rows; row += 1) {
+          thisrow = pt.insertRow(row);
+          for (col = 0; col < puzzle.size.cols; col += 1) {
+            cell = thisrow.insertCell(col);
+            grid = puzzle.gridnums[n];
+            if (grid === 0) {
+              // 0 means no grid number at this location
+              grid = " ";
+            }
+            val = puzzle.grid[n];
+            if (val === ".") {
+              cell.className = "black";
+            } else {
+              cell.innerHTML =
+                "<div class='flex justify-between' style='height: 30px'><div class='grid'>" +
+                grid +
+                "</div>" +
+                "<input type='text' size='1' maxlength='1' class='pa0 ma0 tc' style='width: 20px; font-size: 20px; border: 0px'/>" +
+                "</div>";
+              //"<div class='letter'>" +
+              // val +
+              //"</div>";
+              if (puzzle.circles && puzzle.circles[n] === 1) {
+                cell.className = puzzle.shadecircles ? "shade" : "circle";
+              }
+            }
+            n += 1;
+          }
+        }
+
+        if (puzzle.notepad) {
+          $("#puzNotepad")
+            .show()
+            .html("<b>Notepad:</b> " + puzzle.notepad);
+          var w = document.getElementById("puzTable").clientWidth;
+          document.getElementById("puzNotepad").style.width = w - 10 + "px";
+        }
+
+        // Fill in clues
+
+        $(".clue").show();
+
+        for (i in puzzle.clues.across) {
+          $("#across").append(
+            "<span>" + puzzle.clues.across[i] + "</span><br />"
+          );
+        }
+
+        for (i in puzzle.clues.down) {
+          $("#down").append("<span>" + puzzle.clues.down[i] + "</span><br />");
+        }
+      }
+
+      // This function is called in response to either button click
+
+      function LoadPuzzle(date) {
+        "use strict";
+
+        // clear out old text fields
+
+        $("#puzNotepad, .clue").hide();
+        $("#puzAuthor, #puzCopy, #across, #down").html("");
+        $("#puzTitle").html("Fetching data...");
+
+        // delete old table
+
+        var tbl = $("#puzTable")[0];
+        var n = tbl.rows.length;
+        while (n > 0) {
+          tbl.deleteRow(--n);
+        }
+
+        // make the JSONP call and send result to ShowPuzzle()
+
+        $.getJSON(
+          "https://www.xwordinfo.com/JSON/Data.aspx?callback=?",
+          { date: date },
+          ShowPuzzle
+        );
+      }
+    </script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/tachyons@4/css/tachyons.min.css"
+    />
+  </head>
+
+  <body>
+    <h2 id="puzTitle" class="ph2"></h2>
+    <p id="puzAuthor" class="ph2"></p>
+    <div id="puzNotepad"></div>
+
+    <div class="mw9 center" style="min-width: 466px">
+      <div class="cf">
+        <div class="fl w-60">
+          <div class="fl w-50 f5-ns f7 ph2">
+            <div class="f3-ns f5 tc bg-black white">Across</div>
+            <div id="across"></div>
+          </div>
+          <div class="fl w-50 f5-ns f7 ph2">
+            <div class="f3-ns f5 tc bg-black white">Down</div>
+            <div id="down"></div>
+          </div>
+        </div>
+        <table
+          id="puzTable"
+          class="fl w-40 ph2"
+          style="max-width: 466px;"
+        ></table>
+      </div>
+    </div>
+
+    <div id="puzCopy" class="copy">copy</div>
+    <script>
+      LoadPuzzle("today");
+    </script>
+  </body>
+</html>
